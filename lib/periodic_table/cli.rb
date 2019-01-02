@@ -192,23 +192,20 @@ class PeriodicTable::CLI
     #binding.pry
     len = @@history.length
     if len == 1
-      scrape_properties
+      find = @@history[0]
+      scrape_properties(find)
     else
       choose_element_properties
-
     end
   end
 
   def choose_element_properties
     print "Write either (1)atomic number, (2) symbol, or (3) name of the element you would like to see more about: "
     input = gets.strip
-    binding.pry
     if input.numeric? && @@history.map{|element| element.Z}.include?(input)
-      binding.pry
-      display_properties(@@history.detect {|element| element.Z == input})
-
+      scrape_properties(@@history.detect {|element| element.Z == input})
     elsif search_by_name_or_symbol(input, @@history) != nil
-      display_properties(search_by_name_or_symbol(input, @@history))
+      scrape_properties(search_by_name_or_symbol(input, @@history))
     else
       clear
       puts "Invalid choice! Please choose one of the elements provided in the list below!\n\n"
@@ -218,13 +215,13 @@ class PeriodicTable::CLI
     end
   end
 
-  def scrape_properties
+  def scrape_properties(find)
     start = Time.now
     puts "Scraping proprtiess from wikipedia..."
     #binding.pry
-    PeriodicTable::Scraper.property_scraper(@@history[0]) if @@history[0].properties == nil
+    PeriodicTable::Scraper.property_scraper(find) if find.properties == nil
 
-    display_properties(@@history[0].properties)
+    display_properties(find.properties)
     finish = Time.now
     puts "Done! Scraping time: #{finish - start} seconds.\n\n"
 
@@ -286,9 +283,6 @@ class PeriodicTable::CLI
     @@history = elements
   end
 
-  #check whether the properties of certain element is already scraped or not
-  def know_properties?(element)
-  end
 end
 
 #Used to check whether a string is numeric or not

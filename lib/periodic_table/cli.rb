@@ -202,10 +202,15 @@ class PeriodicTable::CLI
     start = Time.now
     puts "Scraping proprtiess from wikipedia..."
     #binding.pry
-    PeriodicTable::Scraper.property_scraper(@@history.first.url)
-    finish = Time.now
+    PeriodicTable::Scraper.property_scraper(@@history[0]) if @@history[0].properties == nil
 
+    display_properties(@@history[0].properties)
+    finish = Time.now
     puts "Done! Scraping time: #{finish - start} seconds.\n\n"
+
+    puts "Please click anything to continue to the menu..."
+    gets.strip #pauses for the user to click anything
+    menu
   end
 
   def clear
@@ -217,6 +222,26 @@ class PeriodicTable::CLI
     tp elements, :Z, :symbol, :name, :group, :period, :atomic_weight
   end
 
+  def display_properties(properties)
+    print_summary_header(properties.element.name)
+    display_table(properties.element)
+    puts "\n"
+    tp properties, :appearance, :block, :oxidation
+    puts "\n"
+    tp properties, :melting, :boiling
+    puts "\n"
+    puts properties.summary
+    puts "\n\n"
+  end
+
+  def print_summary_header(name)
+    clear
+    puts "\n\n"
+    puts "-"*(57+name.length)
+    puts "-"*20 + "#{name} DETAILED SUMMARY" +"-"*20
+    puts "-"*(57+name.length)
+    puts "\n\n"
+  end
 
   # Search options
   def search_by_name_or_symbol(name, elements = PeriodicTable::Elements.all)
@@ -238,14 +263,6 @@ class PeriodicTable::CLI
   end
 
   def save(elements)
-    # len = @@history.length
-    # case len
-    # when 0, 1
-    #   @@history << elements
-    # when 2
-    #   @@history[0] = @@history.pop
-    #   @@history << elements
-    # end
     @@history = elements
   end
 

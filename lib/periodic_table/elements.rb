@@ -8,6 +8,7 @@ class PeriodicTable::Elements
     save
   end
 
+  #Relate element object with properties object
   def properties=(properties)
     @properties = properties
     @properties.element = self

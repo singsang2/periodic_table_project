@@ -23,8 +23,8 @@ class PeriodicTable::Scraper
     elements.elements.css("table.wikitable tbody tr")[2..-2]
   end
 
-  def self.property_scraper(path)
-    properties = Nokogiri::HTML(open(path))
+  def self.property_scraper(element)
+    properties = Nokogiri::HTML(open(element.url))
     keys = ['appearance', 'block', "phase", "melting", "boiling", "density", "oxidation"]
     hash = {}
 
@@ -41,8 +41,7 @@ class PeriodicTable::Scraper
       hash[key.to_sym] = node.css("td").text.strip if keys.include?(key)
     end
 
-    hash[:summary] = properties.css("div.mw-content-ltr p").text[0..500]
-    PeriodicTable::Properties.new(hash)
-    binding.pry
+    hash[:summary] = Nokogiri::HTML(properties.css("div.mw-content-ltr p").text).text[0,600] + "..."
+    element.properties = PeriodicTable::Properties.new(hash)
   end
 end

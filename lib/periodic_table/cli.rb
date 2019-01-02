@@ -81,6 +81,7 @@ class PeriodicTable::CLI
 
     start = Time.now
     find = search_by_name_or_symbol(input)
+    save([find])
 
     if find == nil
       finish = Time.now
@@ -103,6 +104,7 @@ class PeriodicTable::CLI
 
     start = Time.now
     element_by_name = search_by_name_or_symbol(input)
+    save([element_by_name])
 
     if input.numeric? && input.to_i.between?(1,18)
       find = search_by_group_number(input)
@@ -131,6 +133,7 @@ class PeriodicTable::CLI
 
     start = Time.now
     element_by_name = search_by_name_or_symbol(input)
+    save([element_by_name])
 
     if input == "menu"
       menu
@@ -201,7 +204,7 @@ class PeriodicTable::CLI
 
   def choose_element_properties
     print "Write either (1)atomic number, (2) symbol, or (3) name of the element you would like to see more about: "
-    input = gets.strip
+    input = gets.strip.downcase
     if input.numeric? && @@history.map{|element| element.Z}.include?(input)
       scrape_properties(@@history.detect {|element| element.Z == input})
     elsif search_by_name_or_symbol(input, @@history) != nil
@@ -263,7 +266,6 @@ class PeriodicTable::CLI
   # Search options
   def search_by_name_or_symbol(name, elements = PeriodicTable::Elements.all)
     find = elements.detect {|element| element.name.downcase == name || element.symbol.downcase == name}
-    save([find])
     find
   end
 

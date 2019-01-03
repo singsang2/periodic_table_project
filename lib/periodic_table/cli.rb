@@ -78,9 +78,8 @@ class PeriodicTable::CLI
 
   def search
     #prevents repeatedly showing where the user is
-    puts "="*16+" SEARCH " + "="*16 unless @location == "search"
+    search_header unless @location == "search"
     @location = "search"
-    puts "Search for an element using symbol, name, or atomic number."
     print "Write symbol/name/atomic number of an element to search:"
     input = gets.strip.downcase
 
@@ -117,12 +116,16 @@ class PeriodicTable::CLI
     end
   end
 
+  def search_header
+    puts "="*16+" SEARCH " + "="*16
+    puts "Search for an element using symbol, name, or atomic number."
+  end
+
   #allows user to search elements by their group number or an element symbol/name
   def group
     #prevent repeatedly printing out where the user is
-    puts "="*12+" SEARCH BY GROUP " + "="*12 unless @location == "group"
-    @location = "group" #set location
-    puts "You can search elements with same group using group number or writing symbol/name of an element!"
+    group_header unless @location == "group"
+    @location = "group"
     print "Write group number(1-18) or symbol/name of an element: "
     input = gets.strip.downcase
 
@@ -159,11 +162,15 @@ class PeriodicTable::CLI
     end
   end
 
+  def group_header
+    puts "="*12+" SEARCH BY GROUP " + "="*12
+    puts "You can search elements with same group using group number or writing symbol/name of an element!"
+  end
+
 
   def period
-    puts "="*12+" SEARCH BY PERIOD " + "="*12 unless @location == "period"
+    period_header unless @location == "period"
     @location = "period"
-    puts "You can search for elements in a same period by writing a period number or symbol/name of an element."
     print "Write period number(1-7) or symbol/name of an element: "
     input = gets.strip.downcase
 
@@ -193,12 +200,17 @@ class PeriodicTable::CLI
       options
     else
       puts "Please write a number between 1-7 or a valid element name/symbol!"
-      group
+      period
     end
   end
 
+  def period_header
+    puts "="*12+" SEARCH BY PERIOD " + "="*12
+    puts "You can search for elements in a same period by writing a period number or symbol/name of an element."
+  end
+
   def options
-    menu_detail = [{key: "1", command: "search", function: "search#{@location == "search" ? "element" : " by " + @location}"},
+    menu_detail = [{key: "1", command: "search", function: "search#{@location == "search" ? " an element" : " by " + @location}"},
           {key: "2", command: "detail", function:"display details"},
           {key: "3", command: "menu", function:"goes back to main menu"},
           {key: "4", command: "exit", function:"Exit from the program"}]
@@ -266,9 +278,12 @@ class PeriodicTable::CLI
 
   def scrape_properties(find)
     start = Time.now
-    puts "Scraping proprtiess from wikipedia..."
-    #binding.pry
-    PeriodicTable::Scraper.property_scraper(find) if find.properties == nil
+    if find.properties == nil
+      puts "Scraping proprtiess from wikipedia..."
+      PeriodicTable::Scraper.property_scraper(find)
+    else
+      puts "loading from file..."
+    end
 
     display_properties(find.properties)
     finish = Time.now
@@ -290,6 +305,7 @@ class PeriodicTable::CLI
     tp elements, :Z, :symbol, :name, :group, :period, :atomic_weight
   end
 
+  #displays detailed information of an element
   def display_properties(properties)
     print_summary_header(properties.element.name)
     display_table(properties.element)

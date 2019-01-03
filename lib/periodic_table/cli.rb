@@ -1,7 +1,8 @@
 class PeriodicTable::CLI
-  #saves pervious search history
+  #saves last searched elements
   @@history = []
 
+  #main menu
   MENU = [{key: "1", command: "list", function:"lists all elements"},
         {key: "2", command: "search", function:"search for an element"},
         {key: "3", command: "group", function:"lists elements by groups"},
@@ -9,7 +10,7 @@ class PeriodicTable::CLI
         {key: "5", command: "exit", function:"Exit from the program"}]
 
   def start
-    @location = "start"
+    @location = "start" #stores current method location
     greeting  #displays greeting messages
     scrape_elements #scrapes elements from website
     menu  #displays menu
@@ -30,7 +31,7 @@ class PeriodicTable::CLI
   end
 
   def menu
-    @location = "menu"
+    @location = "menu" #current location
     #displays the menu
     puts "="*16+" M E N U " + "="*16
     tp MENU
@@ -52,7 +53,7 @@ class PeriodicTable::CLI
         period
       when MENU[4].values[0], MENU[4].values[1]
         exit
-      when "clear"
+      when "clear" #not visible but lets user to clear up the terminal
         clear
       end
     else
@@ -71,56 +72,82 @@ class PeriodicTable::CLI
   end
 
   def list
-    display_table
+    display_table #default argument: all elements
     menu
   end
 
   def search
+    #prevents repeatedly showing where the user is
     puts "="*16+" SEARCH " + "="*16 unless @location == "search"
     @location = "search"
-    print "Write symbol/name/atomic number of element you would like to search: "
+    puts "Search for an element using symbol, name, or atomic number."
+    print "Write symbol/name/atomic number of an element to search:"
     input = gets.strip.downcase
 
     start = Time.now
+
+    #to prevent calling #search_by_name_or_symbol multiple times
     find = search_by_name_or_symbol(input)
 
-    if input.numeric? && input.to_i.between?(1,118)
+    #can deal with three possible user inputs: atomic #, symbol, and name
+    if input == "menu"
+      menu
+    elsif input == "clear"
+      clear
+      search
+    elsif input == "exit"
+      puts "Goodbye!"
+      exit
+    elsif input.numeric? && input.to_i.between?(1,118)
       find = search_by_atomic_number(input)
-      save([find])
-      display_table(find)
+      save(find) #saves the found element(s) to @@history
+      display_table(find) #only displays searched element(s)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      options
+      options #detailed options
     elsif find != nil
-      save([find])
-      display_table(find)
+      save(find) #saves the found element(s) to @@history
+      display_table(find) #only displays searched element(s)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      options
+      options #detailed options
     else
       puts "Please write a number between 1-118 or a valid element name/symbol!"
-      search
+      search #loops until a valid option is made
     end
-
   end
 
+  #allows user to search elements by their group number or an element symbol/name
   def group
+    #prevent repeatedly printing out where the user is
     puts "="*12+" SEARCH BY GROUP " + "="*12 unless @location == "group"
-    @location = "group"
-    print "Which group of elements would you like to see (1-18): "
+    @location = "group" #set location
+    puts "You can search elements with same group using group number or writing symbol/name of an element!"
+    print "Write group number(1-18) or symbol/name of an element: "
     input = gets.strip.downcase
 
     start = Time.now
-    element_by_name = search_by_name_or_symbol(input)
-    save([element_by_name])
 
-    if input.numeric? && input.to_i.between?(1,18)
+    #in case user has written name or symbol
+    element_by_name = search_by_name_or_symbol(input)
+
+
+    if input == "menu"
+      menu
+    elsif input == "clear"
+      clear
+      group
+    elsif input == "exit"
+      puts "Goodbye!"
+      exit
+    elsif input.numeric? && input.to_i.between?(1,18)
       find = search_by_group_number(input)
       display_table(find)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
       options
     elsif element_by_name != nil
+      save([element_by_name]) #saves searched group of elements into @@history
       find = search_by_group_number(element_by_name.group)
       display_table(find)
       finish = Time.now
@@ -128,7 +155,7 @@ class PeriodicTable::CLI
       options
     else
       puts "Please write a number between 1-18 or a valid element name/symbol!"
-      group
+      group #loops
     end
   end
 
@@ -136,12 +163,12 @@ class PeriodicTable::CLI
   def period
     puts "="*12+" SEARCH BY PERIOD " + "="*12 unless @location == "period"
     @location = "period"
-    print "Which group of elements would you like to see (1-7): "
+    puts "You can search for elements in a same period by writing a period number or symbol/name of an element."
+    print "Write period number(1-7) or symbol/name of an element: "
     input = gets.strip.downcase
 
     start = Time.now
     element_by_name = search_by_name_or_symbol(input)
-    save([element_by_name])
 
     if input == "menu"
       menu
@@ -149,7 +176,7 @@ class PeriodicTable::CLI
       clear
       period
     elsif input == "exit"
-      puts "Good bye!"
+      puts "Goodbye!"
       exit
     elsif input.numeric? && input.to_i.between?(1,7)
       find = search_by_period_number(input)
@@ -158,6 +185,7 @@ class PeriodicTable::CLI
       puts "Search time: #{finish - start} seconds.\n\n"
       options
     elsif element_by_name != nil
+      save([element_by_name]) #saves the searched elements into @@history
       find = search_by_period_number(element_by_name.group)
       display_table(find)
       finish = Time.now
@@ -170,7 +198,7 @@ class PeriodicTable::CLI
   end
 
   def options
-    menu_detail = [{key: "1", command: "search", function: "search#{@location == "search" ? "" : " by " + @location} options"},
+    menu_detail = [{key: "1", command: "search", function: "search#{@location == "search" ? "element" : " by " + @location}"},
           {key: "2", command: "detail", function:"display details"},
           {key: "3", command: "menu", function:"goes back to main menu"},
           {key: "4", command: "exit", function:"Exit from the program"}]
@@ -193,7 +221,7 @@ class PeriodicTable::CLI
       clear
       self.send("#{@location}")
     when "4", "exit"
-      puts "Good Bye!"
+      puts "Goodbye!"
       exit
     else
       puts "Input not recognized!"
@@ -214,7 +242,16 @@ class PeriodicTable::CLI
   def choose_element_properties
     print "Write either (1)atomic number, (2) symbol, or (3) name of the element you would like to see more about: "
     input = gets.strip.downcase
-    if input.numeric? && @@history.map{|element| element.Z}.include?(input)
+
+    if input == "menu"
+      menu
+    elsif input == "clear"
+      clear
+      period
+    elsif input == "exit"
+      puts "Goodbye!"
+      exit
+    elsif input.numeric? && @@history.map{|element| element.Z}.include?(input)
       scrape_properties(@@history.detect {|element| element.Z == input})
     elsif search_by_name_or_symbol(input, @@history) != nil
       scrape_properties(search_by_name_or_symbol(input, @@history))
@@ -235,7 +272,7 @@ class PeriodicTable::CLI
 
     display_properties(find.properties)
     finish = Time.now
-    puts "Done! Scraping time: #{finish - start} seconds.\n\n"
+    puts "Done! Loading time: #{finish - start} seconds.\n\n"
 
     puts "Please click anything to go back to the menu..."
     gets.strip #pauses for the user to click anything
@@ -268,13 +305,16 @@ class PeriodicTable::CLI
   def print_summary_header(name)
     clear
     puts "\n\n"
-    puts "-"*(57+name.length)
+    puts "-"*(57+name.length) #adjusts depending on length of element name
     puts "-"*20 + "#{name} DETAILED SUMMARY" +"-"*20
     puts "-"*(57+name.length)
     puts "\n\n"
   end
 
-  # Search options
+  ##########################################################################
+  ############################### Search options ###########################
+  ##########################################################################
+  # I wanted to put these in different module, but I kept getting noname error...
   def search_by_name_or_symbol(name, elements = PeriodicTable::Elements.all)
     find = elements.detect {|element| element.name.downcase == name || element.symbol.downcase == name}
     find
@@ -296,9 +336,13 @@ class PeriodicTable::CLI
     save(find)
     find
   end
+  ##########################################################################
+  ##########################################################################
+
 
   def save(elements)
-    @@history = elements
+    #saves the elements as an array if it's one element
+    elements.class == Array ? @@history = elements : @@history = [elements]
   end
 
 end

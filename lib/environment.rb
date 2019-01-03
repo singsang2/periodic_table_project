@@ -13,4 +13,4 @@ require_relative "periodic_table/cli.rb"
 require_relative "periodic_table/elements.rb"
 require_relative "periodic_table/properties.rb"
 require_relative "periodic_table/scraper.rb"
-# require_relative "concerns/findable.rb"
+# require_relative "concerns/findable.rb" I didn't know how to get this work

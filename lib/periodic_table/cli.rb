@@ -99,20 +99,9 @@ class PeriodicTable::CLI
       options
     else
       puts "Please write a number between 1-118 or a valid element name/symbol!"
+      search
     end
 
-
-    # if find == nil
-    #   finish = Time.now
-    #   puts "Search time: #{finish - start} seconds.\n\n"
-    #   puts "Element #{input} not found\n"
-    #   options
-    # else
-    #   display_table(find)
-    #   finish = Time.now
-    #   puts "Search time: #{finish - start} seconds.\n\n"
-    #   options
-    # end
   end
 
   def group
@@ -217,7 +206,6 @@ class PeriodicTable::CLI
     len = @@history.length
     if len == 1
       scrape_properties(@@history[0])
-      binding.pry
     else
       choose_element_properties
     end

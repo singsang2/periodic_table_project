@@ -27,11 +27,13 @@ class PeriodicTable::CLI
   end
 
   def menu
-    @location = "menu" #current location
     #displays the menu
-    puts "="*18+" M E N U " + "="*18
-    tp @menu.all, :key, :command, :function
-    puts "-"*45
+    if @location != "menu"
+      puts "="*18+" M E N U " + "="*18
+      tp @menu.all, :key, :command, :function
+      puts "-"*45
+    end
+    @location = "menu" #current location
 
     #asks for user input from the menu
     print "Please write key number or command: "
@@ -42,9 +44,9 @@ class PeriodicTable::CLI
   end
 
   def header(location)
-    header = HEADER.detect {|x| x[:key] == location}
-    puts "="*20+ header[:title] + "="*20
-    puts header[:description]
+    header = @header.search_by_key(location)
+    puts "="*20+ header.title + "="*20
+    puts header.description
     @location = location
   end
 
@@ -86,6 +88,7 @@ class PeriodicTable::CLI
     start = Time.now
     #to prevent calling #search_by_name_or_symbol multiple times
     find = search_by_name_or_symbol(input)
+    header = @header.search_by_key(@location)
 
     #can deal with three possible user inputs: atomic #, symbol, and name
     if input == "menu"
@@ -96,23 +99,25 @@ class PeriodicTable::CLI
     elsif input == "exit"
       puts "Goodbye!"
       exit
-    elsif input.numeric? && input.to_i.between?(1,HEADER.detect{|x|x[:key]==@location}[:length])
-      find = self.send("search_by_atomic_number",input)
-      save(find) #saves the found element(s) to @@history
+    elsif valid_numeric?(input, header)
+      find = self.send("search_by_#{header.search_type}_number",input)
       display_table(find) #only displays searched element(s)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
       menu #detailed menu
     elsif find != nil
-      save(find) #saves the found element(s) to @@history
       display_table(find) #only displays searched element(s)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
       menu #detailed menu
     else
-      puts "Please write a number between 1-118 or a valid element name/symbol!"
+      puts "Please write a number between 1-#{header.length} or a valid element name/symbol!"
       search #loops until a valid option is made
     end
+  end
+
+  def valid_numeric?(input, header)
+    input.numeric? && input.to_i.between?(1,header.length)
   end
 
   #allows user to search elements by their group number or an element symbol/name
@@ -197,43 +202,6 @@ class PeriodicTable::CLI
       period
     end
   end
-
-  # def period_header
-  #   puts "="*12+" SEARCH BY PERIOD " + "="*12
-  #   puts "You can search for elements in a same period by writing a period number or symbol/name of an element."
-  # end
-
-  # def options
-  #   menu_detail = [{key: "1", command: "search", function: "search#{@location == "search" ? " an element" : " by " + @location}"},
-  #         {key: "2", command: "detail", function:"display details"},
-  #         {key: "3", command: "menu", function:"goes back to main menu"},
-  #         {key: "4", command: "exit", function:"Exit from the program"}]
-  #   puts "="*16+"OPTIONS" + "="*15
-  #   tp menu_detail
-  #   puts "-"*38
-  #
-  #   print "What would you like to do: "
-  #   input = gets.strip.downcase
-  #
-  #   case input
-  #   when "1", "search"
-  #     self.send("#{@location}")
-  #   when "2", "detail"
-  #     properties
-  #   when "3", "menu"
-  #     clear
-  #     menu
-  #   when "clear"
-  #     clear
-  #     self.send("#{@location}")
-  #   when "4", "exit"
-  #     puts "Goodbye!"
-  #     exit
-  #   else
-  #     puts "Input not recognized!"
-  #     options
-  #   end
-  # end
 
   def properties
     #binding.pry

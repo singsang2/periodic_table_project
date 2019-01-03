@@ -10,7 +10,7 @@ class PeriodicTable::Header
   end
 
   def self.search_by_key(key)
-    @all.detect{|header| header.key == key}
+    @@all.detect{|header| header.key == key}
   end
 
   def save

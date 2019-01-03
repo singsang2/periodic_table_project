@@ -2,21 +2,11 @@ class PeriodicTable::CLI
   #saves last searched elements
   @@history = []
 
-  #main menu
-  MENU = [{key: "1", command: "list", function:"lists all elements"},
-        {key: "2", command: "search", function:"search an element"},
-        {key: "3", command: "group", function:"lists elements by groups"},
-        {key: "4", command: "period", function:"lists elements by periods"},
-        {key: "5", command: "detail", function:"displays detailed information"},
-        {key: "6", command: "exit", function:"Exit from the program"}]
-
-  HEADER = [{key: "list", title: "LIST OF ALL ELEMENTS", description: "Lists all the element."},
-            {key: "search", title: "SEARCH AN ELEMENT", description: "You can search for an element by writing atomic number, name, or symbol of an element.", length: 118},
-            {key:"group", title: "SEARCH BY GROUP", description: "You can search for elements with same group by group number(1-18), name, or symbol of an element in the group.", length: 18},
-            {key:"period", title: "SEARCH BY PERIOD", description: "You can search for elements with same period by period number(1-7), name, or symbol of an element in the period.", length: 7}]
-
   def start
     @location = "start" #stores current method location
+    @menu = PeriodicTable::Menu
+    @header = PeriodicTable::Header
+
     greeting  #displays greeting messages
     scrape_elements #scrapes elements from website
     menu  #displays menu
@@ -40,7 +30,7 @@ class PeriodicTable::CLI
     @location = "menu" #current location
     #displays the menu
     puts "="*18+" M E N U " + "="*18
-    tp MENU
+    tp @menu.all, :key, :command, :function
     puts "-"*45
 
     #asks for user input from the menu
@@ -60,22 +50,13 @@ class PeriodicTable::CLI
 
   #directs the program where to head
   def option(input)
-    case input
-    when MENU[0].values[0], MENU[0].values[1]
-      list
-    when MENU[1].values[0], MENU[1].values[1]
-      search_an_element
-    when MENU[2].values[0], MENU[2].values[1]
-      group
-    when MENU[3].values[0], MENU[3].values[1]
-      period
-    when MENU[4].values[0], MENU[4].values[1]
-      choose_element_properties
-    when MENU[5].values[0], MENU[5].values[1]
-      exit
-    when "clear" #not visible but lets user to clear up the terminal
+    find = @menu.search(input)
+
+    if input == "clear"
       clear
       menu
+    elsif find != nil
+      self.send("#{find.output}")
     else
       puts "ME NO UNDERSTAND YOU! \\_(-___-)_/ Please try again."
       menu  #repeat the menu if user input is not valid
@@ -116,7 +97,7 @@ class PeriodicTable::CLI
       puts "Goodbye!"
       exit
     elsif input.numeric? && input.to_i.between?(1,HEADER.detect{|x|x[:key]==@location}[:length])
-      find = search_by_atomic_number(input)
+      find = self.send("search_by_atomic_number",input)
       save(find) #saves the found element(s) to @@history
       display_table(find) #only displays searched element(s)
       finish = Time.now

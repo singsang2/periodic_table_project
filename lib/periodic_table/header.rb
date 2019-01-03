@@ -3,16 +3,16 @@ class PeriodicTable::Header
   @@all = []
 
   def initialize(hash)
-    prop_hash.each do |key, value|
+    hash.each do |key, value|
       self.send("#{key}=", value)
     end
     save
   end
 
-  def search_by_key(key)
+  def self.search_by_key(key)
     @all.detect{|header| header.key == key}
   end
-  
+
   def save
     @@all << self
   end

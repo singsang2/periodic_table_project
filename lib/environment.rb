@@ -23,11 +23,11 @@ HEADER = [{key: "list", title: "LIST OF ALL ELEMENTS", description: "Lists all t
           {key:"period", title: "SEARCH BY PERIOD", description: "You can search for elements with same period by period number(1-7), name, or symbol of an element in the period.", length: 7, search_type: "period"}]
 
 #main menu
-MENU = [{key: "1", command: "list", function:"lists all elements"},
-      {key: "2", command: "search", function:"search an element"},
-      {key: "3", command: "group", function:"lists elements by groups"},
-      {key: "4", command: "period", function:"lists elements by periods"},
-      {key: "5", command: "detail", function:"displays detailed information"},
-      {key: "6", command: "exit", function:"Exit from the program"}]
-PeriodicTable::Header.new(HEADER)
-PeiordicTable::Menu.new(MENU)
+MENU = [{key: "1", command: "list", function:"lists all elements", output: "list"},
+      {key: "2", command: "search", function:"search an element", output: "search_an_element"},
+      {key: "3", command: "group", function:"lists elements by groups", output: "group"},
+      {key: "4", command: "period", function:"lists elements by periods", output: "period"},
+      {key: "5", command: "detail", function:"displays detailed information", output: "choose_element_properties"},
+      {key: "6", command: "exit", function:"Exit from the program", output: "exit"}]
+MENU.each {|menu|PeriodicTable::Menu.new(menu)}
+HEADER.each {|header|PeriodicTable::Header.new(header)}

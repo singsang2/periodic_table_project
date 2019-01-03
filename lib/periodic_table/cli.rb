@@ -14,6 +14,7 @@ class PeriodicTable::CLI
             {key: "search", title: "SEARCH AN ELEMENT", description: "You can search for an element by writing atomic number, name, or symbol of an element."},
             {key:"group", title: "SEARCH BY GROUP", description: "You can search for elements with same group by group number(1-18), name, or symbol of an element in the group."},
             {key:"period", title: "SEARCH BY PERIOD", description: "You can search for elements with same period by period number(1-7), name, or symbol of an element in the period."}]
+
   def start
     @location = "start" #stores current method location
     greeting  #displays greeting messages
@@ -63,7 +64,7 @@ class PeriodicTable::CLI
     when MENU[0].values[0], MENU[0].values[1]
       list
     when MENU[1].values[0], MENU[1].values[1]
-      search
+      search_an_element
     when MENU[2].values[0], MENU[2].values[1]
       group
     when MENU[3].values[0], MENU[3].values[1]
@@ -88,10 +89,10 @@ class PeriodicTable::CLI
     header("list") unless @location == "list"
 
     display_table(@@history) #default argument: all elements
+    menu
   end
 
-
-  def search
+  def search_an_element
     #prevents repeatedly showing where the user is
     header("search") unless @location == "search"
 

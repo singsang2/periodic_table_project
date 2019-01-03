@@ -1,11 +1,13 @@
 class PeriodicTable::CLI
   #saves pervious search history
   @@history = []
+
   MENU = [{key: "1", command: "list", function:"lists all elements"},
         {key: "2", command: "search", function:"search for an element"},
         {key: "3", command: "group", function:"lists elements by groups"},
         {key: "4", command: "period", function:"lists elements by periods"},
         {key: "5", command: "exit", function:"Exit from the program"}]
+
   def start
     @location = "start"
     greeting  #displays greeting messages
@@ -76,24 +78,41 @@ class PeriodicTable::CLI
   def search
     puts "="*16+" SEARCH " + "="*16 unless @location == "search"
     @location = "search"
-    print "Write symbol or name of element: "
+    print "Write symbol/name/atomic number of element you would like to search: "
     input = gets.strip.downcase
 
     start = Time.now
     find = search_by_name_or_symbol(input)
-    save([find])
 
-    if find == nil
-      finish = Time.now
-      puts "Search time: #{finish - start} seconds.\n\n"
-      puts "Element #{input} not found\n"
-      again
-    else
+    if input.numeric? && input.to_i.between?(1,118)
+      find = search_by_atomic_number(input)
+      save([find])
       display_table(find)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      again
+      options
+    elsif find != nil
+      save([find])
+      display_table(find)
+      finish = Time.now
+      puts "Search time: #{finish - start} seconds.\n\n"
+      options
+    else
+      puts "Please write a number between 1-118 or a valid element name/symbol!"
     end
+
+
+    # if find == nil
+    #   finish = Time.now
+    #   puts "Search time: #{finish - start} seconds.\n\n"
+    #   puts "Element #{input} not found\n"
+    #   options
+    # else
+    #   display_table(find)
+    #   finish = Time.now
+    #   puts "Search time: #{finish - start} seconds.\n\n"
+    #   options
+    # end
   end
 
   def group
@@ -111,13 +130,13 @@ class PeriodicTable::CLI
       display_table(find)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      again
+      options
     elsif element_by_name != nil
       find = search_by_group_number(element_by_name.group)
       display_table(find)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      again
+      options
     else
       puts "Please write a number between 1-18 or a valid element name/symbol!"
       group
@@ -141,27 +160,28 @@ class PeriodicTable::CLI
       clear
       period
     elsif input == "exit"
+      puts "Good bye!"
       exit
     elsif input.numeric? && input.to_i.between?(1,7)
       find = search_by_period_number(input)
       display_table(find)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      again
+      options
     elsif element_by_name != nil
       find = search_by_period_number(element_by_name.group)
       display_table(find)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      again
+      options
     else
       puts "Please write a number between 1-7 or a valid element name/symbol!"
       group
     end
   end
 
-  def again
-    menu_detail = [{key: "1", command: "search", function: "search#{@location == "search" ? "" : " by " + @location} again"},
+  def options
+    menu_detail = [{key: "1", command: "search", function: "search#{@location == "search" ? "" : " by " + @location} options"},
           {key: "2", command: "detail", function:"display details"},
           {key: "3", command: "menu", function:"goes back to main menu"},
           {key: "4", command: "exit", function:"Exit from the program"}]
@@ -184,19 +204,20 @@ class PeriodicTable::CLI
       clear
       self.send("#{@location}")
     when "4", "exit"
+      puts "Good Bye!"
       exit
     else
       puts "Input not recognized!"
-      again
+      options
     end
   end
 
-  def properties()
+  def properties
     #binding.pry
     len = @@history.length
     if len == 1
-      find = @@history[0]
-      scrape_properties(find)
+      scrape_properties(@@history[0])
+      binding.pry
     else
       choose_element_properties
     end
@@ -228,9 +249,11 @@ class PeriodicTable::CLI
     finish = Time.now
     puts "Done! Scraping time: #{finish - start} seconds.\n\n"
 
-    puts "Please click anything to continue to the menu..."
+    puts "Please click anything to go back to the menu..."
     gets.strip #pauses for the user to click anything
-    menu
+    clear
+    display_table(@@history)
+    options
   end
 
   def clear
@@ -266,6 +289,11 @@ class PeriodicTable::CLI
   # Search options
   def search_by_name_or_symbol(name, elements = PeriodicTable::Elements.all)
     find = elements.detect {|element| element.name.downcase == name || element.symbol.downcase == name}
+    find
+  end
+
+  def search_by_atomic_number(number)
+    find = PeriodicTable::Elements.all.map {|element| element if element.Z == number}.compact
     find
   end
 

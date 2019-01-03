@@ -11,9 +11,9 @@ class PeriodicTable::CLI
         {key: "6", command: "exit", function:"Exit from the program"}]
 
   HEADER = [{key: "list", title: "LIST OF ALL ELEMENTS", description: "Lists all the element."},
-            {key: "search", title: "SEARCH AN ELEMENT", description: "You can search for an element by writing atomic number, name, or symbol of an element."},
-            {key:"group", title: "SEARCH BY GROUP", description: "You can search for elements with same group by group number(1-18), name, or symbol of an element in the group."},
-            {key:"period", title: "SEARCH BY PERIOD", description: "You can search for elements with same period by period number(1-7), name, or symbol of an element in the period."}]
+            {key: "search", title: "SEARCH AN ELEMENT", description: "You can search for an element by writing atomic number, name, or symbol of an element.", length: 118},
+            {key:"group", title: "SEARCH BY GROUP", description: "You can search for elements with same group by group number(1-18), name, or symbol of an element in the group.", length: 18},
+            {key:"period", title: "SEARCH BY PERIOD", description: "You can search for elements with same period by period number(1-7), name, or symbol of an element in the period.", length: 7}]
 
   def start
     @location = "start" #stores current method location
@@ -98,9 +98,11 @@ class PeriodicTable::CLI
 
     print "Write symbol/name/atomic number of an element to search:"
     input = gets.strip.downcase
+    search(input)
+  end
 
+  def search(input)
     start = Time.now
-
     #to prevent calling #search_by_name_or_symbol multiple times
     find = search_by_name_or_symbol(input)
 
@@ -109,11 +111,11 @@ class PeriodicTable::CLI
       menu
     elsif input == "clear"
       clear
-      search
+      self.send("#{@location}")
     elsif input == "exit"
       puts "Goodbye!"
       exit
-    elsif input.numeric? && input.to_i.between?(1,118)
+    elsif input.numeric? && input.to_i.between?(1,HEADER.detect{|x|x[:key]==@location}[:length])
       find = search_by_atomic_number(input)
       save(find) #saves the found element(s) to @@history
       display_table(find) #only displays searched element(s)
@@ -131,11 +133,6 @@ class PeriodicTable::CLI
       search #loops until a valid option is made
     end
   end
-
-  # def search_header
-  #   puts "="*16+" SEARCH " + "="*16
-  #   puts "Search for an element using symbol, name, or atomic number."
-  # end
 
   #allows user to search elements by their group number or an element symbol/name
   def group

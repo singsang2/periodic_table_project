@@ -4,11 +4,16 @@ class PeriodicTable::CLI
 
   #main menu
   MENU = [{key: "1", command: "list", function:"lists all elements"},
-        {key: "2", command: "search", function:"search for an element"},
+        {key: "2", command: "search", function:"search an element"},
         {key: "3", command: "group", function:"lists elements by groups"},
         {key: "4", command: "period", function:"lists elements by periods"},
-        {key: "5", command: "exit", function:"Exit from the program"}]
+        {key: "5", command: "detail", function:"displays detailed information"},
+        {key: "6", command: "exit", function:"Exit from the program"}]
 
+  HEADER = [{key: "list", title: "LIST OF ALL ELEMENTS", description: "Lists all the element."},
+            {key: "search", title: "SEARCH AN ELEMENT", description: "You can search for an element by writing atomic number, name, or symbol of an element."},
+            {key:"group", title: "SEARCH BY GROUP", description: "You can search for elements with same group by group number(1-18), name, or symbol of an element in the group."},
+            {key:"period", title: "SEARCH BY PERIOD", description: "You can search for elements with same period by period number(1-7), name, or symbol of an element in the period."}]
   def start
     @location = "start" #stores current method location
     greeting  #displays greeting messages
@@ -33,53 +38,63 @@ class PeriodicTable::CLI
   def menu
     @location = "menu" #current location
     #displays the menu
-    puts "="*16+" M E N U " + "="*16
+    puts "="*18+" M E N U " + "="*18
     tp MENU
-    puts "-"*41
+    puts "-"*45
 
     #asks for user input from the menu
     print "Please write key number or command: "
     input = gets.strip.downcase
 
-    if valid?(input)
-      case input
-      when MENU[0].values[0], MENU[0].values[1]
-        list
-      when MENU[1].values[0], MENU[1].values[1]
-        search
-      when MENU[2].values[0], MENU[2].values[1]
-        group
-      when MENU[3].values[0], MENU[3].values[1]
-        period
-      when MENU[4].values[0], MENU[4].values[1]
-        exit
-      when "clear" #not visible but lets user to clear up the terminal
-        clear
-      end
+    #send the input the #option
+    option(input)
+  end
+
+  def header(location)
+    header = HEADER.detect {|x| x[:key] == location}
+    puts "="*20+ header[:title] + "="*20
+    puts header[:description]
+    @location = location
+  end
+
+  #directs the program where to head
+  def option(input)
+    case input
+    when MENU[0].values[0], MENU[0].values[1]
+      list
+    when MENU[1].values[0], MENU[1].values[1]
+      search
+    when MENU[2].values[0], MENU[2].values[1]
+      group
+    when MENU[3].values[0], MENU[3].values[1]
+      period
+    when MENU[4].values[0], MENU[4].values[1]
+      choose_element_properties
+    when MENU[5].values[0], MENU[5].values[1]
+      exit
+    when "clear" #not visible but lets user to clear up the terminal
+      clear
+      menu
     else
+      puts "ME NO UNDERSTAND YOU! \\_(-___-)_/ Please try again."
       menu  #repeat the menu if user input is not valid
     end
   end
 
-  #checks whether user input is valid option or not
-  def valid?(input)
-    if input.numeric?
-      input.to_i.between?(1,MENU.length) ? true : false
-    else
-      #checks whether input is one of the commands or not
-      MENU.map{|option| option[:command]}.include?(input) ? true : false
-    end
+  def list
+    save(PeriodicTable::Elements.all)
+
+    #prevents repeatedly showing where the user is
+    header("list") unless @location == "list"
+
+    display_table(@@history) #default argument: all elements
   end
 
-  def list
-    display_table #default argument: all elements
-    menu
-  end
 
   def search
     #prevents repeatedly showing where the user is
-    search_header unless @location == "search"
-    @location = "search"
+    header("search") unless @location == "search"
+
     print "Write symbol/name/atomic number of an element to search:"
     input = gets.strip.downcase
 
@@ -103,29 +118,29 @@ class PeriodicTable::CLI
       display_table(find) #only displays searched element(s)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      options #detailed options
+      menu #detailed menu
     elsif find != nil
       save(find) #saves the found element(s) to @@history
       display_table(find) #only displays searched element(s)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      options #detailed options
+      menu #detailed menu
     else
       puts "Please write a number between 1-118 or a valid element name/symbol!"
       search #loops until a valid option is made
     end
   end
 
-  def search_header
-    puts "="*16+" SEARCH " + "="*16
-    puts "Search for an element using symbol, name, or atomic number."
-  end
+  # def search_header
+  #   puts "="*16+" SEARCH " + "="*16
+  #   puts "Search for an element using symbol, name, or atomic number."
+  # end
 
   #allows user to search elements by their group number or an element symbol/name
   def group
     #prevent repeatedly printing out where the user is
-    group_header unless @location == "group"
-    @location = "group"
+    header("group") unless @location == "group"
+
     print "Write group number(1-18) or symbol/name of an element: "
     input = gets.strip.downcase
 
@@ -148,29 +163,29 @@ class PeriodicTable::CLI
       display_table(find)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      options
+      menu
     elsif element_by_name != nil
       save([element_by_name]) #saves searched group of elements into @@history
       find = search_by_group_number(element_by_name.group)
       display_table(find)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      options
+      menu
     else
       puts "Please write a number between 1-18 or a valid element name/symbol!"
       group #loops
     end
   end
 
-  def group_header
-    puts "="*12+" SEARCH BY GROUP " + "="*12
-    puts "You can search elements with same group using group number or writing symbol/name of an element!"
-  end
+  # def group_header
+  #   puts "="*12+" SEARCH BY GROUP " + "="*12
+  #   puts "You can search elements with same group using group number or writing symbol/name of an element!"
+  # end
 
 
   def period
-    period_header unless @location == "period"
-    @location = "period"
+    header("period") unless @location == "period"
+
     print "Write period number(1-7) or symbol/name of an element: "
     input = gets.strip.downcase
 
@@ -190,56 +205,56 @@ class PeriodicTable::CLI
       display_table(find)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      options
+      menu
     elsif element_by_name != nil
       save([element_by_name]) #saves the searched elements into @@history
       find = search_by_period_number(element_by_name.group)
       display_table(find)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      options
+      menu
     else
       puts "Please write a number between 1-7 or a valid element name/symbol!"
       period
     end
   end
 
-  def period_header
-    puts "="*12+" SEARCH BY PERIOD " + "="*12
-    puts "You can search for elements in a same period by writing a period number or symbol/name of an element."
-  end
+  # def period_header
+  #   puts "="*12+" SEARCH BY PERIOD " + "="*12
+  #   puts "You can search for elements in a same period by writing a period number or symbol/name of an element."
+  # end
 
-  def options
-    menu_detail = [{key: "1", command: "search", function: "search#{@location == "search" ? " an element" : " by " + @location}"},
-          {key: "2", command: "detail", function:"display details"},
-          {key: "3", command: "menu", function:"goes back to main menu"},
-          {key: "4", command: "exit", function:"Exit from the program"}]
-    puts "="*16+"OPTIONS" + "="*15
-    tp menu_detail
-    puts "-"*38
-
-    print "What would you like to do: "
-    input = gets.strip.downcase
-
-    case input
-    when "1", "search"
-      self.send("#{@location}")
-    when "2", "detail"
-      properties
-    when "3", "menu"
-      clear
-      menu
-    when "clear"
-      clear
-      self.send("#{@location}")
-    when "4", "exit"
-      puts "Goodbye!"
-      exit
-    else
-      puts "Input not recognized!"
-      options
-    end
-  end
+  # def options
+  #   menu_detail = [{key: "1", command: "search", function: "search#{@location == "search" ? " an element" : " by " + @location}"},
+  #         {key: "2", command: "detail", function:"display details"},
+  #         {key: "3", command: "menu", function:"goes back to main menu"},
+  #         {key: "4", command: "exit", function:"Exit from the program"}]
+  #   puts "="*16+"OPTIONS" + "="*15
+  #   tp menu_detail
+  #   puts "-"*38
+  #
+  #   print "What would you like to do: "
+  #   input = gets.strip.downcase
+  #
+  #   case input
+  #   when "1", "search"
+  #     self.send("#{@location}")
+  #   when "2", "detail"
+  #     properties
+  #   when "3", "menu"
+  #     clear
+  #     menu
+  #   when "clear"
+  #     clear
+  #     self.send("#{@location}")
+  #   when "4", "exit"
+  #     puts "Goodbye!"
+  #     exit
+  #   else
+  #     puts "Input not recognized!"
+  #     options
+  #   end
+  # end
 
   def properties
     #binding.pry
@@ -293,7 +308,7 @@ class PeriodicTable::CLI
     gets.strip #pauses for the user to click anything
     clear
     display_table(@@history)
-    options
+    menu
   end
 
   def clear
@@ -328,7 +343,7 @@ class PeriodicTable::CLI
   end
 
   ##########################################################################
-  ############################### Search options ###########################
+  ############################### Search menu ###########################
   ##########################################################################
   # I wanted to put these in different module, but I kept getting noname error...
   def search_by_name_or_symbol(name, elements = PeriodicTable::Elements.all)

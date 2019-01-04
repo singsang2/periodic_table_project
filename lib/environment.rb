@@ -24,10 +24,10 @@ HEADER = [{key: "list", title: "LIST OF ALL ELEMENTS", description: "Lists all t
 
 #main menu
 MENU = [{key: "1", command: "list", function:"lists all elements", output: "list"},
-      {key: "2", command: "search", function:"search an element", output: "search_an_element"},
+      {key: "2", command: "search", function:"search an element", output: "search"},
       {key: "3", command: "group", function:"lists elements by groups", output: "group"},
       {key: "4", command: "period", function:"lists elements by periods", output: "period"},
-      {key: "5", command: "detail", function:"displays detailed information", output: "choose_element_properties"},
-      {key: "6", command: "exit", function:"Exit from the program", output: "exit"}]
+      #{key: "5", command: "detail", function:"displays detailed information", output: "choose_element_properties"},
+      {key: "5", command: "exit", function:"Exit from the program", output: "exit"}]
 MENU.each {|menu|PeriodicTable::Menu.new(menu)}
 HEADER.each {|header|PeriodicTable::Header.new(header)}

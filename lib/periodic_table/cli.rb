@@ -43,6 +43,10 @@ class PeriodicTable::CLI
     option(input)
   end
 
+  def search_menu
+    print "Write "
+  end
+
   def header(location)
     header = @header.search_by_key(location)
     puts "="*20+ header.title + "="*20
@@ -75,16 +79,17 @@ class PeriodicTable::CLI
     menu
   end
 
-  def search_an_element
+  def search
     #prevents repeatedly showing where the user is
     header("search") unless @location == "search"
 
     print "Write symbol/name/atomic number of an element to search:"
     input = gets.strip.downcase
-    search(input)
+    search_by_input(input)
+    choose_element_properties
   end
 
-  def search(input)
+  def search_by_input(input)
     start = Time.now
     #to prevent calling #search_by_name_or_symbol multiple times
     find = search_by_name_or_symbol(input)
@@ -104,15 +109,18 @@ class PeriodicTable::CLI
       display_table(find) #only displays searched element(s)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      menu #detailed menu
     elsif find != nil
+      binding.pry
+      find = self.send("search_by_#{header.search_type}_number", find.send("#{@location}")) if @location != "search"
       display_table(find) #only displays searched element(s)
       finish = Time.now
       puts "Search time: #{finish - start} seconds.\n\n"
-      menu #detailed menu
     else
+      puts "Could not find #{input} from the list!"
       puts "Please write a number between 1-#{header.length} or a valid element name/symbol!"
-      search #loops until a valid option is made
+      puts "Press any key go back to the previous search..."
+      gets.strip
+      self.send("#{@location}") #loops until a valid option is made
     end
   end
 
@@ -128,37 +136,38 @@ class PeriodicTable::CLI
     print "Write group number(1-18) or symbol/name of an element: "
     input = gets.strip.downcase
 
-    start = Time.now
+    search_by_input(input)
+    # start = Time.now
+    #
+    # #in case user has written name or symbol
+    # element_by_name = search_by_name_or_symbol(input)
+    #
 
-    #in case user has written name or symbol
-    element_by_name = search_by_name_or_symbol(input)
-
-
-    if input == "menu"
-      menu
-    elsif input == "clear"
-      clear
-      group
-    elsif input == "exit"
-      puts "Goodbye!"
-      exit
-    elsif input.numeric? && input.to_i.between?(1,18)
-      find = search_by_group_number(input)
-      display_table(find)
-      finish = Time.now
-      puts "Search time: #{finish - start} seconds.\n\n"
-      menu
-    elsif element_by_name != nil
-      save([element_by_name]) #saves searched group of elements into @@history
-      find = search_by_group_number(element_by_name.group)
-      display_table(find)
-      finish = Time.now
-      puts "Search time: #{finish - start} seconds.\n\n"
-      menu
-    else
-      puts "Please write a number between 1-18 or a valid element name/symbol!"
-      group #loops
-    end
+    # if input == "menu"
+    #   menu
+    # elsif input == "clear"
+    #   clear
+    #   group
+    # elsif input == "exit"
+    #   puts "Goodbye!"
+    #   exit
+    # elsif input.numeric? && input.to_i.between?(1,18)
+    #   find = search_by_group_number(input)
+    #   display_table(find)
+    #   finish = Time.now
+    #   puts "Search time: #{finish - start} seconds.\n\n"
+    #   menu
+    # elsif element_by_name != nil
+    #   save([element_by_name]) #saves searched group of elements into @@history
+    #   find = search_by_group_number(element_by_name.group)
+    #   display_table(find)
+    #   finish = Time.now
+    #   puts "Search time: #{finish - start} seconds.\n\n"
+    #   menu
+    # else
+    #   puts "Please write a number between 1-18 or a valid element name/symbol!"
+    #   group #loops
+    # end
   end
 
   # def group_header
@@ -214,6 +223,7 @@ class PeriodicTable::CLI
   end
 
   def choose_element_properties
+    puts "* Write 'menu' to go back to the main menu"
     print "Write either (1)atomic number, (2) symbol, or (3) name of the element you would like to see more about: "
     input = gets.strip.downcase
 

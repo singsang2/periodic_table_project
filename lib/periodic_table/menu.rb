@@ -1,5 +1,5 @@
 class PeriodicTable::Menu
-  attr_accessor :key, :command, :function, :output
+  attr_accessor :key, :command, :function, :output, :ask
   @@all = []
 
   def initialize(hash)

@@ -1,5 +1,5 @@
 class PeriodicTable::Header
-  attr_accessor :key, :title, :description, :length, :search_type
+  attr_accessor :key, :title, :description, :length, :search_type, :search_option
   @@all = []
 
   def initialize(hash)

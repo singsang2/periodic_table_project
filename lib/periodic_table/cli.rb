@@ -1,12 +1,11 @@
 class PeriodicTable::CLI
-  #saves last searched elements
-  @@history = []
-
   def start
     @location = "start" #stores current method location
-    @menu = PeriodicTable::Menu
-    @header = PeriodicTable::Header
-
+    @menu = PeriodicTable::Menu # all menu + their options
+    @header = PeriodicTable::Header # all possible headers
+    @history = [] #stores previous search history
+    @main = ["menu", "exit", "clear"] #user can use these prompt inner menus
+    random
     greeting  #displays greeting messages
     scrape_elements #scrapes elements from website
     menu  #displays menu
@@ -18,12 +17,12 @@ class PeriodicTable::CLI
   end
 
   def scrape_elements
-    start = Time.now
+    @start = Time.now
     puts "Scraping elements from wikipedia..."
     PeriodicTable::Scraper.element_scraper
-    finish = Time.now
+    @finish = Time.now
 
-    puts "Done! Scraping time: #{finish - start} seconds.\n\n"
+    puts "Done! Scraping time: #{@finish - @start} seconds.\n\n"
   end
 
   def menu
@@ -37,16 +36,23 @@ class PeriodicTable::CLI
 
     #asks for user input from the menu
     print "Please write key number or command: "
-    input = gets.strip.downcase
+    user_input = gets.strip.downcase
 
-    #send the input the #option
-    option(input)
+    if valid?(user_input)
+      input = @menu.search(user_input)
+      self.send(input.command)
+    else
+      puts "ME NO UNDERSTAND YOU! \\_(-___-)_/ Please try again."
+      menu # repeats the menu until valid input
+    end
   end
 
-  def search_menu
-    print "Write "
+  #checks whether the user input is a valid choice or not
+  def valid?(input)
+    @menu.search(input) != nil
   end
 
+  # prints out appropriate header for different methods
   def header(location)
     header = @header.search_by_key(location)
     puts "="*20+ header.title + "="*20
@@ -54,218 +60,129 @@ class PeriodicTable::CLI
     @location = location
   end
 
-  #directs the program where to head
-  def option(input)
-    find = @menu.search(input)
-
-    if input == "clear"
-      clear
-      menu
-    elsif find != nil
-      self.send("#{find.output}")
-    else
-      puts "ME NO UNDERSTAND YOU! \\_(-___-)_/ Please try again."
-      menu  #repeat the menu if user input is not valid
-    end
-  end
-
   def list
-    save(PeriodicTable::Elements.all)
-
-    #prevents repeatedly showing where the user is
-    header("list") unless @location == "list"
-
-    display_table(@@history) #default argument: all elements
+    header("list")
+    display_table(PeriodicTable::Elements.all) #default argument: all elements
     menu
   end
 
   def search
     #prevents repeatedly showing where the user is
     header("search") unless @location == "search"
+    submenu
+    find = search_by_input(input)
+  end
 
-    print "Write symbol/name/atomic number of an element to search:"
+  def group
+    header("group") unless @location == "group"
+    submenu
+  end
+
+  def period
+    header("period") unless @location == "period"
+    submenu
+  end
+
+  def submenu
+    print @menu.search(@location).ask
     input = gets.strip.downcase
-    search_by_input(input)
-    choose_element_properties
+    header = @header.search_by_key(@location)
+
+    if @main.include?(input) #in case the user input is one of 'main', 'exit', 'clear' commands
+      self.send(input)
+    else
+      find = search_by_input(input)
+      if valid_find?(find) && @history != []
+        save(find)
+        display_table
+        element_property
+      elsif valid_find?(find) && @history == []
+        puts "Element '#{search_by_name_or_symbol(input).name.capitalize} - #{search_by_name_or_symbol(input).symbol.capitalize}' does not have a group number. Remember Lathanides and Actinides do not have group numbers!"
+        puts "Press any key go back to the previous search..."
+        gets.strip
+        submenu
+      else
+        puts "Could not find '#{input.capitalize}' from the list!"
+        puts "Please write a number between 1-#{header.length} or a valid element name/symbol!"
+        puts "Press any key go back to the previous search..."
+        gets.strip
+        submenu
+      end
+    end
+  end
+
+  # checks if the search result is valid (not nil)
+  def valid_find?(find)
+    find != nil
   end
 
   def search_by_input(input)
-    start = Time.now
+    @start = Time.now
     #to prevent calling #search_by_name_or_symbol multiple times
     find = search_by_name_or_symbol(input)
-    header = @header.search_by_key(@location)
-
     #can deal with three possible user inputs: atomic #, symbol, and name
+    if valid_numeric?(input)
+      #uses appropriate search method
+      find = self.send("search_by_#{@header.search_by_key(@location).search_type}_number",input)
+    elsif find != nil
+      #uses appropriate search method
+      find = self.send("search_by_#{@header.search_by_key(@location).search_type}_number",find.Z)
+    else
+      nil
+    end
+  end
+
+  #checks whether numeric input is between a valid parameter: group (1-18) period(1-7)
+  def valid_numeric?(input)
+    input.numeric? && input.to_i.between?(1,@header.search_by_key(@location).length)
+  end
+
+  def element_property
+    puts "* menu - to go back to the main menu."
+    puts "* exit - to exit out of the program"
+    puts "* r -  to repeat the search#{ "by " + (@location) if @location != "search"}."
+
+    print @header.search_by_key(@location).search_option
+    input = gets.strip.downcase
+
     if input == "menu"
       menu
-    elsif input == "clear"
-      clear
+    elsif input == "r"
       self.send("#{@location}")
     elsif input == "exit"
       puts "Goodbye!"
       exit
-    elsif valid_numeric?(input, header)
-      find = self.send("search_by_#{header.search_type}_number",input)
-      display_table(find) #only displays searched element(s)
-      finish = Time.now
-      puts "Search time: #{finish - start} seconds.\n\n"
-    elsif find != nil
-      binding.pry
-      find = self.send("search_by_#{header.search_type}_number", find.send("#{@location}")) if @location != "search"
-      display_table(find) #only displays searched element(s)
-      finish = Time.now
-      puts "Search time: #{finish - start} seconds.\n\n"
-    else
-      puts "Could not find #{input} from the list!"
-      puts "Please write a number between 1-#{header.length} or a valid element name/symbol!"
-      puts "Press any key go back to the previous search..."
-      gets.strip
-      self.send("#{@location}") #loops until a valid option is made
-    end
-  end
-
-  def valid_numeric?(input, header)
-    input.numeric? && input.to_i.between?(1,header.length)
-  end
-
-  #allows user to search elements by their group number or an element symbol/name
-  def group
-    #prevent repeatedly printing out where the user is
-    header("group") unless @location == "group"
-
-    print "Write group number(1-18) or symbol/name of an element: "
-    input = gets.strip.downcase
-
-    search_by_input(input)
-    # start = Time.now
-    #
-    # #in case user has written name or symbol
-    # element_by_name = search_by_name_or_symbol(input)
-    #
-
-    # if input == "menu"
-    #   menu
-    # elsif input == "clear"
-    #   clear
-    #   group
-    # elsif input == "exit"
-    #   puts "Goodbye!"
-    #   exit
-    # elsif input.numeric? && input.to_i.between?(1,18)
-    #   find = search_by_group_number(input)
-    #   display_table(find)
-    #   finish = Time.now
-    #   puts "Search time: #{finish - start} seconds.\n\n"
-    #   menu
-    # elsif element_by_name != nil
-    #   save([element_by_name]) #saves searched group of elements into @@history
-    #   find = search_by_group_number(element_by_name.group)
-    #   display_table(find)
-    #   finish = Time.now
-    #   puts "Search time: #{finish - start} seconds.\n\n"
-    #   menu
-    # else
-    #   puts "Please write a number between 1-18 or a valid element name/symbol!"
-    #   group #loops
-    # end
-  end
-
-  # def group_header
-  #   puts "="*12+" SEARCH BY GROUP " + "="*12
-  #   puts "You can search elements with same group using group number or writing symbol/name of an element!"
-  # end
-
-
-  def period
-    header("period") unless @location == "period"
-
-    print "Write period number(1-7) or symbol/name of an element: "
-    input = gets.strip.downcase
-
-    start = Time.now
-    element_by_name = search_by_name_or_symbol(input)
-
-    if input == "menu"
-      menu
-    elsif input == "clear"
-      clear
-      period
-    elsif input == "exit"
-      puts "Goodbye!"
-      exit
-    elsif input.numeric? && input.to_i.between?(1,7)
-      find = search_by_period_number(input)
-      display_table(find)
-      finish = Time.now
-      puts "Search time: #{finish - start} seconds.\n\n"
-      menu
-    elsif element_by_name != nil
-      save([element_by_name]) #saves the searched elements into @@history
-      find = search_by_period_number(element_by_name.group)
-      display_table(find)
-      finish = Time.now
-      puts "Search time: #{finish - start} seconds.\n\n"
-      menu
-    else
-      puts "Please write a number between 1-7 or a valid element name/symbol!"
-      period
-    end
-  end
-
-  def properties
-    #binding.pry
-    len = @@history.length
-    if len == 1
-      scrape_properties(@@history[0])
-    else
-      choose_element_properties
-    end
-  end
-
-  def choose_element_properties
-    puts "* Write 'menu' to go back to the main menu"
-    print "Write either (1)atomic number, (2) symbol, or (3) name of the element you would like to see more about: "
-    input = gets.strip.downcase
-
-    if input == "menu"
-      menu
-    elsif input == "clear"
-      clear
-      period
-    elsif input == "exit"
-      puts "Goodbye!"
-      exit
-    elsif input.numeric? && @@history.map{|element| element.Z}.include?(input)
-      scrape_properties(@@history.detect {|element| element.Z == input})
-    elsif search_by_name_or_symbol(input, @@history) != nil
-      scrape_properties(search_by_name_or_symbol(input, @@history))
+    elsif input.numeric? && @history.map{|element| element.Z}.include?(input)
+      scrape_properties(@history.detect {|element| element.Z == input})
+    elsif search_by_name_or_symbol(input, @history) != nil
+      #binding.pry
+      scrape_properties(search_by_name_or_symbol(input, @history))
     else
       clear
       puts "Invalid choice! Please choose one of the elements provided in the list below!\n\n"
-      display_table(@@history)
-      choose_element_properties
-
+      display_table(@history)
+      element_property
     end
   end
 
   def scrape_properties(find)
-    start = Time.now
+    @start = Time.now
     if find.properties == nil
       puts "Scraping proprtiess from wikipedia..."
       PeriodicTable::Scraper.property_scraper(find)
     else
-      puts "loading from file..."
+      puts "loading from database..."
     end
 
     display_properties(find.properties)
-    finish = Time.now
-    puts "Done! Loading time: #{finish - start} seconds.\n\n"
+    @finish = Time.now
+    puts "Done! Loading time: #{@finish - @start} seconds.\n\n"
 
     puts "Please click anything to go back to the menu..."
     gets.strip #pauses for the user to click anything
     clear
-    display_table(@@history)
-    menu
+    display_table(@history)
+    element_property
   end
 
   def clear
@@ -273,7 +190,7 @@ class PeriodicTable::CLI
   end
 
   # displays sorted elements - default value is all elements
-  def display_table(elements = PeriodicTable::Elements.all)
+  def display_table(elements = @history)
     tp elements, :Z, :symbol, :name, :group, :period, :atomic_weight
   end
 
@@ -285,6 +202,8 @@ class PeriodicTable::CLI
     tp properties, :appearance, :block, :oxidation
     puts "\n"
     tp properties, :melting, :boiling
+    puts "\n"
+    tp properties, :name_origin
     puts "\n"
     puts properties.summary
     puts "\n\n"
@@ -305,11 +224,14 @@ class PeriodicTable::CLI
   # I wanted to put these in different module, but I kept getting noname error...
   def search_by_name_or_symbol(name, elements = PeriodicTable::Elements.all)
     find = elements.detect {|element| element.name.downcase == name || element.symbol.downcase == name}
+    #binding.pry
+    save(find) if @location == "search"
     find
   end
 
   def search_by_atomic_number(number)
     find = PeriodicTable::Elements.all.map {|element| element if element.Z == number}.compact
+    save(find) if @location == "search"
     find
   end
 
@@ -330,9 +252,12 @@ class PeriodicTable::CLI
 
   def save(elements)
     #saves the elements as an array if it's one element
-    elements.class == Array ? @@history = elements : @@history = [elements]
+    elements.class == Array ? @history = elements : @history = [elements]
   end
 
+  def random
+    num = (0..92).to_a
+  end
 end
 
 #Used to check whether a string is numeric or not

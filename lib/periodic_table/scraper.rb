@@ -1,9 +1,10 @@
 class PeriodicTable::Scraper
   def self.element_scraper(path="https://en.wikipedia.org/wiki/List_of_chemical_elements")
     elements = Nokogiri::HTML(open(path))
-
+    #binding.pry
     self.get_table(elements).each do |element|
       #construct hash that contains element data (symbol, name, atomic number, atomic mass)
+      #binding.pry
       hash = {
         name: element.css("td")[2].text,
         symbol: element.css("td")[1].text,
@@ -20,7 +21,7 @@ class PeriodicTable::Scraper
 
   def self.get_table(elements)
     #first two rows and the last row are not part of the data
-    elements.elements.css("table.wikitable tbody tr")[2..-2]
+    elements.elements.css("table.wikitable tbody tr")[3..-2]
   end
 
   def self.property_scraper(element)
@@ -41,6 +42,7 @@ class PeriodicTable::Scraper
       hash[key.to_sym] = node.css("td").text.strip if keys.include?(key)
     end
 
+    #just get first 600 words from the paragraph.
     hash[:summary] = Nokogiri::HTML(properties.css("div.mw-content-ltr p").text).text[0,600] + "..."
     element.properties = PeriodicTable::Properties.new(hash)
   end

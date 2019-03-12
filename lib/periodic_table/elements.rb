@@ -1,5 +1,5 @@
 class PeriodicTable::Elements
-  attr_accessor :symbol, :name, :Z, :atomic_weight, :url, :group, :period, :name_origin, :properties
+  attr_accessor :symbol, :name, :Z, :atomic_weight, :url, :group, :period, :name_origin, :properties, :atomic
   @@all = []
   def initialize(hash_data)
     hash_data.each do |key, value|

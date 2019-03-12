@@ -5,7 +5,6 @@ class PeriodicTable::CLI
     @header = PeriodicTable::Header # all possible headers
     @history = [] #stores previous search history
     @main = ["menu", "exit", "clear"] #user can use these prompt inner menus
-    random
     greeting  #displays greeting messages
     scrape_elements #scrapes elements from website
     menu  #displays menu
@@ -70,7 +69,7 @@ class PeriodicTable::CLI
     #prevents repeatedly showing where the user is
     header("search") unless @location == "search"
     submenu
-    find = search_by_input(input)
+    # find = search_by_input(input)
   end
 
   def group
@@ -92,7 +91,8 @@ class PeriodicTable::CLI
       self.send(input)
     else
       find = search_by_input(input)
-      if valid_find?(find) && @history != []
+
+      if valid_find?(find)
         save(find)
         display_table
         element_property
@@ -118,15 +118,17 @@ class PeriodicTable::CLI
 
   def search_by_input(input)
     @start = Time.now
-    #to prevent calling #search_by_name_or_symbol multiple times
     find = search_by_name_or_symbol(input)
+    type = @header.search_by_key(@location).search_type
+
     #can deal with three possible user inputs: atomic #, symbol, and name
     if valid_numeric?(input)
       #uses appropriate search method
-      find = self.send("search_by_#{@header.search_by_key(@location).search_type}_number",input)
+      find = self.send("search_by_#{type}_number",input)
+    #  binding.pry
     elsif find != nil
       #uses appropriate search method
-      find = self.send("search_by_#{@header.search_by_key(@location).search_type}_number",find.Z)
+      find = self.send("search_by_#{type}_number",find)
     else
       nil
     end
@@ -140,22 +142,19 @@ class PeriodicTable::CLI
   def element_property
     puts "* menu - to go back to the main menu."
     puts "* exit - to exit out of the program"
-    puts "* r -  to repeat the search#{ "by " + (@location) if @location != "search"}."
+    puts "* r -  to repeat the search#{ " by " + (@location) if @location != "search"}."
 
     print @header.search_by_key(@location).search_option
     input = gets.strip.downcase
-
-    if input == "menu"
-      menu
+    if @main.include?(input) #in case the user input is one of 'main', 'exit', 'clear' commands
+      self.send(input)
     elsif input == "r"
-      self.send("#{@location}")
-    elsif input == "exit"
-      puts "Goodbye!"
-      exit
+      self.send(@location)
+    elsif input == "" && @location == "search"
+      scrape_properties(@history[0])
     elsif input.numeric? && @history.map{|element| element.Z}.include?(input)
       scrape_properties(@history.detect {|element| element.Z == input})
     elsif search_by_name_or_symbol(input, @history) != nil
-      #binding.pry
       scrape_properties(search_by_name_or_symbol(input, @history))
     else
       clear
@@ -203,7 +202,9 @@ class PeriodicTable::CLI
     puts "\n"
     tp properties, :melting, :boiling
     puts "\n"
-    tp properties, :name_origin
+    puts "Name Origin:"
+    puts "------------"
+    puts properties.element.name_origin
     puts "\n"
     puts properties.summary
     puts "\n\n"
@@ -224,24 +225,27 @@ class PeriodicTable::CLI
   # I wanted to put these in different module, but I kept getting noname error...
   def search_by_name_or_symbol(name, elements = PeriodicTable::Elements.all)
     find = elements.detect {|element| element.name.downcase == name || element.symbol.downcase == name}
-    #binding.pry
     save(find) if @location == "search"
     find
   end
 
-  def search_by_atomic_number(number)
+  def search_by_atomic_number(input)
+    input.class != PeriodicTable::Elements ? number = input : number = input.Z
     find = PeriodicTable::Elements.all.map {|element| element if element.Z == number}.compact
     save(find) if @location == "search"
     find
   end
 
-  def search_by_group_number(number)
+  def search_by_group_number(input)
+    input.class != PeriodicTable::Elements ? number = input : number = input.group
     find = PeriodicTable::Elements.all.map {|element| element if element.group == number}.compact
     save(find)
     find
   end
 
-  def search_by_period_number(number)
+  def search_by_period_number(input)
+    #binding.pry
+    input.class != PeriodicTable::Elements ? number = input : number = input.period
     find = PeriodicTable::Elements.all.map {|element| element if element.period == number}.compact
     save(find)
     find
@@ -253,10 +257,6 @@ class PeriodicTable::CLI
   def save(elements)
     #saves the elements as an array if it's one element
     elements.class == Array ? @history = elements : @history = [elements]
-  end
-
-  def random
-    num = (0..92).to_a
   end
 end
 
